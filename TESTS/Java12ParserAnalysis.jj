@@ -1,0 +1,885 @@
+options {
+    STATIC = false;
+    JAVA_UNICODE_ESCAPE = true;
+    LOOKAHEAD = 2;
+}
+
+PARSER_BEGIN(Java12ParserAnalysis)
+
+package javacc;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Java12ParserAnalysis {
+
+    // ---- Invocation tracking ----
+    public static class InvocationInfo {
+        public String expression;
+        public String fileName;
+        public int line;
+        public int column;
+
+        public InvocationInfo(String expression, String fileName, int line, int column) {
+            this.expression = expression;
+            this.fileName = fileName;
+            this.line = line;
+            this.column = column;
+        }
+
+        public String toString() {
+            return expression + ": file " + fileName + ", line " + line + ", column " + column;
+        }
+    }
+
+    private List<InvocationInfo> invocations = new ArrayList<InvocationInfo>();
+    private String currentFileName = "<unknown>";
+
+    public void setFileName(String name) {
+        this.currentFileName = name;
+    }
+
+    public List<InvocationInfo> getInvocations() {
+        return invocations;
+    }
+
+    private void recordInvocation(String expr, Token tok) {
+        invocations.add(new InvocationInfo(expr, currentFileName, tok.beginLine, tok.beginColumn));
+    }
+}
+
+PARSER_END(Java12ParserAnalysis)
+
+/* ============================================================
+   Whitespace and Comments
+   ============================================================ */
+SKIP : {
+    " " | "\t" | "\n" | "\r" | "\f"
+}
+
+SPECIAL_TOKEN : {
+    <SINGLE_LINE_COMMENT: "//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")? >
+}
+
+MORE : {
+    "/*" : IN_MULTI_LINE_COMMENT
+}
+
+<IN_MULTI_LINE_COMMENT> SPECIAL_TOKEN : {
+    <MULTI_LINE_COMMENT: "*/" > : DEFAULT
+}
+
+<IN_MULTI_LINE_COMMENT> MORE : {
+    < ~[] >
+}
+
+/* ============================================================
+   Keywords
+   ============================================================ */
+TOKEN : {
+    < ABSTRACT: "abstract" >
+|   < BOOLEAN: "boolean" >
+|   < BREAK: "break" >
+|   < BYTE: "byte" >
+|   < CASE: "case" >
+|   < CATCH: "catch" >
+|   < CHAR: "char" >
+|   < CLASS: "class" >
+|   < CONTINUE: "continue" >
+|   < DEFAULT: "default" >
+|   < DO: "do" >
+|   < DOUBLE: "double" >
+|   < ELSE: "else" >
+|   < EXTENDS: "extends" >
+|   < FALSE: "false" >
+|   < FINAL: "final" >
+|   < FINALLY: "finally" >
+|   < FLOAT: "float" >
+|   < FOR: "for" >
+|   < IF: "if" >
+|   < IMPLEMENTS: "implements" >
+|   < IMPORT: "import" >
+|   < INSTANCEOF: "instanceof" >
+|   < INT: "int" >
+|   < INTERFACE: "interface" >
+|   < LONG: "long" >
+|   < NATIVE: "native" >
+|   < NEW: "new" >
+|   < NULL: "null" >
+|   < PACKAGE: "package" >
+|   < PRIVATE: "private" >
+|   < PROTECTED: "protected" >
+|   < PUBLIC: "public" >
+|   < RETURN: "return" >
+|   < SHORT: "short" >
+|   < STATIC: "static" >
+|   < STRICTFP: "strictfp" >
+|   < SUPER: "super" >
+|   < SWITCH: "switch" >
+|   < SYNCHRONIZED: "synchronized" >
+|   < THIS: "this" >
+|   < THROW: "throw" >
+|   < THROWS: "throws" >
+|   < TRANSIENT: "transient" >
+|   < TRUE: "true" >
+|   < TRY: "try" >
+|   < VOID: "void" >
+|   < VOLATILE: "volatile" >
+|   < WHILE: "while" >
+}
+
+/* ============================================================
+   Literals
+   ============================================================ */
+TOKEN : {
+    < INTEGER_LITERAL:
+        <DECIMAL_LITERAL> (["l","L"])?
+      | <HEX_LITERAL> (["l","L"])?
+      | <OCTAL_LITERAL> (["l","L"])?
+    >
+|   < #DECIMAL_LITERAL: ["1"-"9"] (["0"-"9"])* | "0" >
+|   < #HEX_LITERAL: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+ >
+|   < #OCTAL_LITERAL: "0" (["0"-"7"])+ >
+|   < FLOATING_POINT_LITERAL:
+        (["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? (["f","F","d","D"])?
+      | "." (["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+      | (["0"-"9"])+ <EXPONENT> (["f","F","d","D"])?
+      | (["0"-"9"])+ (["f","F","d","D"])
+    >
+|   < #EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+ >
+|   < CHARACTER_LITERAL:
+        "'" ( (~["'","\\","\n","\r"]) | <ESCAPE_SEQUENCE> ) "'"
+    >
+|   < STRING_LITERAL:
+        "\"" ( (~["\"","\\","\n","\r"]) | <ESCAPE_SEQUENCE> )* "\""
+    >
+|   < #ESCAPE_SEQUENCE:
+        "\\" ( ["n","t","b","r","f","\\","'","\""]
+             | ["0"-"7"] ( ["0"-"7"] )?
+             | ["0"-"3"] ["0"-"7"] ["0"-"7"]
+             )
+    >
+}
+
+/* ============================================================
+   Identifiers
+   ============================================================ */
+TOKEN : {
+    < IDENTIFIER: <JAVA_LETTER> (<JAVA_LETTER_OR_DIGIT>)* >
+|   < #JAVA_LETTER: ["a"-"z","A"-"Z","_","$"] >
+|   < #JAVA_LETTER_OR_DIGIT: ["a"-"z","A"-"Z","0"-"9","_","$"] >
+}
+
+/* ============================================================
+   Separators and Operators
+   ============================================================ */
+TOKEN : {
+    < LPAREN: "(" >
+|   < RPAREN: ")" >
+|   < LBRACE: "{" >
+|   < RBRACE: "}" >
+|   < LBRACKET: "[" >
+|   < RBRACKET: "]" >
+|   < SEMICOLON: ";" >
+|   < COMMA: "," >
+|   < DOT: "." >
+|   < ASSIGN: "=" >
+|   < GT: ">" >
+|   < LT: "<" >
+|   < BANG: "!" >
+|   < TILDE: "~" >
+|   < HOOK: "?" >
+|   < COLON: ":" >
+|   < EQ: "==" >
+|   < LE: "<=" >
+|   < GE: ">=" >
+|   < NE: "!=" >
+|   < SC_AND: "&&" >
+|   < SC_OR: "||" >
+|   < INCR: "++" >
+|   < DECR: "--" >
+|   < PLUS: "+" >
+|   < MINUS: "-" >
+|   < STAR: "*" >
+|   < SLASH: "/" >
+|   < BIT_AND: "&" >
+|   < BIT_OR: "|" >
+|   < XOR: "^" >
+|   < REM: "%" >
+|   < LSHIFT: "<<" >
+|   < RSIGNEDSHIFT: ">>" >
+|   < RUNSIGNEDSHIFT: ">>>" >
+|   < PLUSASSIGN: "+=" >
+|   < MINUSASSIGN: "-=" >
+|   < STARASSIGN: "*=" >
+|   < SLASHASSIGN: "/=" >
+|   < ANDASSIGN: "&=" >
+|   < ORASSIGN: "|=" >
+|   < XORASSIGN: "^=" >
+|   < REMASSIGN: "%=" >
+|   < LSHIFTASSIGN: "<<=" >
+|   < RSIGNEDSHIFTASSIGN: ">>=" >
+|   < RUNSIGNEDSHIFTASSIGN: ">>>=" >
+}
+
+/* ============================================================
+   COMPILATION UNIT
+   ============================================================ */
+void CompilationUnit() :
+{}
+{
+    [ LOOKAHEAD(2) PackageDeclaration() ]
+    ( ImportDeclaration() )*
+    ( TypeDeclaration() )*
+    <EOF>
+}
+
+void PackageDeclaration() :
+{}
+{
+    "package" QualifiedName() ";"
+}
+
+void ImportDeclaration() :
+{}
+{
+    "import" QualifiedName() [ "." "*" ] ";"
+}
+
+void TypeDeclaration() :
+{}
+{
+    LOOKAHEAD( ( Modifier() )* "class" )
+    ClassDeclaration()
+|   InterfaceDeclaration()
+|   ";"
+}
+
+/* ============================================================
+   MODIFIERS
+   ============================================================ */
+void Modifier() :
+{}
+{
+    "public" | "protected" | "private" | "static" | "abstract"
+|   "final" | "native" | "synchronized" | "transient" | "volatile" | "strictfp"
+}
+
+/* ============================================================
+   CLASS DECLARATION
+   ============================================================ */
+void ClassDeclaration() :
+{}
+{
+    ( Modifier() )*
+    "class" <IDENTIFIER>
+    [ "extends" ClassOrInterfaceType() ]
+    [ "implements" ClassTypeList() ]
+    ClassBody()
+}
+
+void ClassBody() :
+{}
+{
+    "{" ( ClassBodyDeclaration() )* "}"
+}
+
+void ClassBodyDeclaration() :
+{}
+{
+    LOOKAHEAD(2)
+    ";"
+|   LOOKAHEAD( "static" "{" )
+    "static" Block()
+|   LOOKAHEAD( "{" )
+    Block()
+|   LOOKAHEAD( ( Modifier() )* Type() <IDENTIFIER> ( "[" "]" )* ( "," | "=" | ";" ) )
+    ( Modifier() )* FieldDeclaration()
+|   LOOKAHEAD( ( Modifier() )* ( Type() | "void" ) <IDENTIFIER> "(" )
+    ( Modifier() )* MethodDeclaration()
+|   LOOKAHEAD( ( Modifier() )* <IDENTIFIER> "(" )
+    ( Modifier() )* ConstructorDeclaration()
+|   LOOKAHEAD( ( Modifier() )* "class" )
+    ( Modifier() )* ClassDeclaration()
+|   ( Modifier() )* InterfaceDeclaration()
+}
+
+/* ============================================================
+   FIELD DECLARATION
+   ============================================================ */
+void FieldDeclaration() :
+{}
+{
+    Type() VariableDeclarators() ";"
+}
+
+void VariableDeclarators() :
+{}
+{
+    VariableDeclarator() ( "," VariableDeclarator() )*
+}
+
+void VariableDeclarator() :
+{}
+{
+    VariableDeclaratorId() [ "=" VariableInitializer() ]
+}
+
+void VariableDeclaratorId() :
+{}
+{
+    <IDENTIFIER> ( "[" "]" )*
+}
+
+void VariableInitializer() :
+{}
+{
+    ArrayInitializer()
+|   Expression()
+}
+
+/* ============================================================
+   METHOD DECLARATION
+   ============================================================ */
+void MethodDeclaration() :
+{}
+{
+    ResultType() <IDENTIFIER> "(" [ FormalParameterList() ] ")" ( "[" "]" )*
+    [ "throws" ClassTypeList() ]
+    ( Block() | ";" )
+}
+
+void ResultType() :
+{}
+{
+    "void"
+|   Type()
+}
+
+void FormalParameterList() :
+{}
+{
+    FormalParameter() ( "," FormalParameter() )*
+}
+
+void FormalParameter() :
+{}
+{
+    [ "final" ] Type() VariableDeclaratorId()
+}
+
+/* ============================================================
+   CONSTRUCTOR DECLARATION
+   ============================================================ */
+void ConstructorDeclaration() :
+{}
+{
+    <IDENTIFIER> "(" [ FormalParameterList() ] ")"
+    [ "throws" ClassTypeList() ]
+    "{"
+        [ LOOKAHEAD( ExplicitConstructorInvocation() ) ExplicitConstructorInvocation() ]
+        ( BlockStatement() )*
+    "}"
+}
+
+void ExplicitConstructorInvocation() :
+{
+    Token t;
+    Token startTok;
+    String expr;
+}
+{
+    LOOKAHEAD( "this" "(" )
+    t = "this" "(" { expr = "this("; } [ expr = ArgumentListStr(expr) ] ")"
+    {
+        expr += ")";
+        recordInvocation(expr, t);
+    }
+    ";"
+|   LOOKAHEAD( "super" "(" )
+    t = "super" "(" { expr = "super("; } [ expr = ArgumentListStr(expr) ] ")"
+    {
+        expr += ")";
+        recordInvocation(expr, t);
+    }
+    ";"
+|   LOOKAHEAD( PrimaryExpression() "." "super" "(" )
+    PrimaryExpression() "." t = "super" "("
+    {
+        expr = "super(";
+    }
+    [ expr = ArgumentListStr(expr) ] ")"
+    {
+        expr += ")";
+        recordInvocation(expr, t);
+    }
+    ";"
+}
+
+/* ============================================================
+   INTERFACE DECLARATION
+   ============================================================ */
+void InterfaceDeclaration() :
+{}
+{
+    ( Modifier() )*
+    "interface" <IDENTIFIER>
+    [ "extends" ClassTypeList() ]
+    "{" ( InterfaceMemberDeclaration() )* "}"
+}
+
+void InterfaceMemberDeclaration() :
+{}
+{
+    LOOKAHEAD( ( Modifier() )* Type() <IDENTIFIER> ( "[" "]" )* ( "," | "=" | ";" ) )
+    ( Modifier() )* FieldDeclaration()
+|   LOOKAHEAD( ( Modifier() )* ( Type() | "void" ) <IDENTIFIER> "(" )
+    ( Modifier() )* MethodDeclaration()
+|   LOOKAHEAD( ( Modifier() )* "class" )
+    ( Modifier() )* ClassDeclaration()
+|   LOOKAHEAD( ( Modifier() )* "interface" )
+    ( Modifier() )* InterfaceDeclaration()
+|   ";"
+}
+
+/* ============================================================
+   TYPES
+   ============================================================ */
+void Type() :
+{}
+{
+    ( PrimitiveType() | ClassOrInterfaceType() ) ( "[" "]" )*
+}
+
+void PrimitiveType() :
+{}
+{
+    "boolean" | "char" | "byte" | "short" | "int" | "long" | "float" | "double"
+}
+
+void ClassOrInterfaceType() :
+{}
+{
+    <IDENTIFIER> ( LOOKAHEAD(2) "." <IDENTIFIER> )*
+}
+
+String ClassOrInterfaceTypeStr() :
+{
+    Token t;
+    String s;
+}
+{
+    t = <IDENTIFIER> { s = t.image; }
+    ( LOOKAHEAD(2) "." t = <IDENTIFIER> { s += "." + t.image; } )*
+    { return s; }
+}
+
+void ClassTypeList() :
+{}
+{
+    ClassOrInterfaceType() ( "," ClassOrInterfaceType() )*
+}
+
+void QualifiedName() :
+{}
+{
+    <IDENTIFIER> ( LOOKAHEAD(2) "." <IDENTIFIER> )*
+}
+
+/* ============================================================
+   BLOCKS AND STATEMENTS
+   ============================================================ */
+void Block() :
+{}
+{
+    "{" ( BlockStatement() )* "}"
+}
+
+void BlockStatement() :
+{}
+{
+    LOOKAHEAD( [ "final" ] Type() <IDENTIFIER> )
+    LocalVariableDeclaration() ";"
+|   LOOKAHEAD( ( Modifier() )* "class" )
+    ClassDeclaration()
+|   Statement()
+}
+
+void LocalVariableDeclaration() :
+{}
+{
+    [ "final" ] Type() VariableDeclarators()
+}
+
+void Statement() :
+{}
+{
+    LOOKAHEAD(2)
+    Block()
+|   LOOKAHEAD(2)
+    "if" "(" Expression() ")" Statement() [ LOOKAHEAD(1) "else" Statement() ]
+|   "for" "(" [ ForInit() ] ";" [ Expression() ] ";" [ ForUpdate() ] ")" Statement()
+|   "while" "(" Expression() ")" Statement()
+|   "do" Statement() "while" "(" Expression() ")" ";"
+|   LOOKAHEAD(2)
+    TryStatement()
+|   "switch" "(" Expression() ")" "{" ( SwitchBlockStatementGroup() )* "}"
+|   "synchronized" "(" Expression() ")" Block()
+|   "return" [ Expression() ] ";"
+|   "throw" Expression() ";"
+|   "break" [ <IDENTIFIER> ] ";"
+|   "continue" [ <IDENTIFIER> ] ";"
+|   ";"
+|   LOOKAHEAD( <IDENTIFIER> ":" )
+    <IDENTIFIER> ":" Statement()
+|   StatementExpression() ";"
+}
+
+void TryStatement() :
+{}
+{
+    "try" Block()
+    ( LOOKAHEAD(2) CatchClause() )*
+    [ "finally" Block() ]
+}
+
+void CatchClause() :
+{}
+{
+    "catch" "(" FormalParameter() ")" Block()
+}
+
+void SwitchBlockStatementGroup() :
+{}
+{
+    SwitchLabel() ( LOOKAHEAD(2) SwitchLabel() )*
+    ( BlockStatement() )+
+}
+
+void SwitchLabel() :
+{}
+{
+    "case" Expression() ":"
+|   "default" ":"
+}
+
+void ForInit() :
+{}
+{
+    LOOKAHEAD( [ "final" ] Type() <IDENTIFIER> )
+    LocalVariableDeclaration()
+|   StatementExpressionList()
+}
+
+void ForUpdate() :
+{}
+{
+    StatementExpressionList()
+}
+
+void StatementExpressionList() :
+{}
+{
+    StatementExpression() ( "," StatementExpression() )*
+}
+
+void StatementExpression() :
+{}
+{
+    Expression()
+}
+
+/* ============================================================
+   EXPRESSIONS
+   ============================================================ */
+void Expression() :
+{}
+{
+    ConditionalExpression()
+    [
+        AssignmentOperator() Expression()
+    ]
+}
+
+void AssignmentOperator() :
+{}
+{
+    "=" | "+=" | "-=" | "*=" | "/=" | "&=" | "|=" | "^=" | "%="
+|   "<<=" | ">>=" | ">>>="
+}
+
+void ConditionalExpression() :
+{}
+{
+    ConditionalOrExpression()
+    [ "?" Expression() ":" ConditionalExpression() ]
+}
+
+void ConditionalOrExpression() :
+{}
+{
+    ConditionalAndExpression() ( "||" ConditionalAndExpression() )*
+}
+
+void ConditionalAndExpression() :
+{}
+{
+    InclusiveOrExpression() ( "&&" InclusiveOrExpression() )*
+}
+
+void InclusiveOrExpression() :
+{}
+{
+    ExclusiveOrExpression() ( "|" ExclusiveOrExpression() )*
+}
+
+void ExclusiveOrExpression() :
+{}
+{
+    AndExpression() ( "^" AndExpression() )*
+}
+
+void AndExpression() :
+{}
+{
+    EqualityExpression() ( "&" EqualityExpression() )*
+}
+
+void EqualityExpression() :
+{}
+{
+    RelationalExpression() ( ( "==" | "!=" ) RelationalExpression() )*
+}
+
+void RelationalExpression() :
+{}
+{
+    ShiftExpression()
+    ( ( "<" | ">" | "<=" | ">=" ) ShiftExpression()
+    | "instanceof" Type()
+    )*
+}
+
+void ShiftExpression() :
+{}
+{
+    AdditiveExpression() ( ( "<<" | ">>" | ">>>" ) AdditiveExpression() )*
+}
+
+void AdditiveExpression() :
+{}
+{
+    MultiplicativeExpression() ( ( "+" | "-" ) MultiplicativeExpression() )*
+}
+
+void MultiplicativeExpression() :
+{}
+{
+    UnaryExpression() ( ( "*" | "/" | "%" ) UnaryExpression() )*
+}
+
+void UnaryExpression() :
+{}
+{
+    ( "+" | "-" ) UnaryExpression()
+|   PreIncrementExpression()
+|   PreDecrementExpression()
+|   UnaryExpressionNotPlusMinus()
+}
+
+void PreIncrementExpression() :
+{}
+{
+    "++" UnaryExpression()
+}
+
+void PreDecrementExpression() :
+{}
+{
+    "--" UnaryExpression()
+}
+
+void UnaryExpressionNotPlusMinus() :
+{}
+{
+    ( "~" | "!" ) UnaryExpression()
+|   LOOKAHEAD( CastExpression() )
+    CastExpression()
+|   PostfixExpression()
+}
+
+void CastExpression() :
+{}
+{
+    LOOKAHEAD( "(" PrimitiveType() )
+    "(" PrimitiveType() ( "[" "]" )* ")" UnaryExpression()
+|   "(" ClassOrInterfaceType() ( "[" "]" )* ")" UnaryExpressionNotPlusMinus()
+}
+
+void PostfixExpression() :
+{}
+{
+    PrimaryExpression()
+    ( "++" | "--" )*
+}
+
+/*
+ * PrimaryExpression tracks the expression string to record invocations.
+ */
+String PrimaryExpression() :
+{
+    String prefix;
+    String suffix;
+    Token startTok = null;
+}
+{
+    { startTok = getToken(1); }
+    prefix = PrimaryPrefix()
+    (
+        LOOKAHEAD(2)
+        suffix = PrimarySuffix(prefix, startTok)
+        { prefix = prefix + suffix; }
+    )*
+    { return prefix; }
+}
+
+String PrimaryPrefix() :
+{
+    Token t;
+    String expr;
+}
+{
+    Literal()
+    { return "<literal>"; }
+|   "this"
+    { return "this"; }
+|   "super"
+    { return "super"; }
+|   "(" Expression() ")"
+    { return "(<expr>)"; }
+|   LOOKAHEAD( "new" )
+    expr = AllocationExpressionStr()
+    { return expr; }
+|   LOOKAHEAD( ResultType() "." "class" )
+    ResultType() "." "class"
+    { return "<type>.class"; }
+|   t = <IDENTIFIER>
+    { return t.image; }
+}
+
+String PrimarySuffix(String currentExpr, Token startTok) :
+{
+    Token t;
+    String args = "";
+}
+{
+    "." "this"
+    { return ".this"; }
+|   "." "class"
+    { return ".class"; }
+|   LOOKAHEAD(2)
+    "." AllocationExpressionStr()
+    { return ".<new>"; }
+|   LOOKAHEAD(2)
+    "[" Expression() "]"
+    { return "[<expr>]"; }
+|   "." t = <IDENTIFIER>
+    { return "." + t.image; }
+|   "(" { args = currentExpr + "("; }
+    [ args = ArgumentListStr(args) ]
+    ")"
+    {
+        args += ")";
+        recordInvocation(args, startTok);
+        return "(<args>)";
+    }
+}
+
+String ArgumentListStr(String prefix) :
+{
+    // We just build a string of the argument list for display
+    // For simplicity, we count arguments rather than reconstructing full expressions
+}
+{
+    {
+        // We need to collect the text of arguments
+        // Simple approach: track token positions
+        Token start = getToken(0);  // token before first arg
+    }
+    Expression()
+    { prefix += "..."; }
+    ( "," Expression() { prefix += ", ..."; } )*
+    { return prefix; }
+}
+
+String AllocationExpressionStr() :
+{
+    Token newTok;
+    String typeName;
+    String expr;
+}
+{
+    LOOKAHEAD(2)
+    newTok = "new" PrimitiveType() ArrayDimsAndInits()
+    { return "new <primitive-array>"; }
+|   newTok = "new" typeName = ClassOrInterfaceTypeStr()
+    (
+        ArrayDimsAndInits()
+        { return "new " + typeName + "[<array>]"; }
+    |   "("
+        {
+            expr = "new " + typeName + "(";
+        }
+        [ expr = ArgumentListStr(expr) ]
+        ")"
+        {
+            expr += ")";
+            recordInvocation(expr, newTok);
+        }
+        [ ClassBody() ]
+        { return expr; }
+    )
+}
+
+void ArrayDimsAndInits() :
+{}
+{
+    LOOKAHEAD(2)
+    ( LOOKAHEAD(2) "[" Expression() "]" )+ ( LOOKAHEAD(2) "[" "]" )*
+|   ( "[" "]" )+ ArrayInitializer()
+}
+
+/* ============================================================
+   ARRAY INITIALIZER
+   ============================================================ */
+void ArrayInitializer() :
+{}
+{
+    "{" [ VariableInitializer() ( LOOKAHEAD(2) "," VariableInitializer() )* [ "," ] ] "}"
+}
+
+/* ============================================================
+   LITERALS
+   ============================================================ */
+void Literal() :
+{}
+{
+    <INTEGER_LITERAL>
+|   <FLOATING_POINT_LITERAL>
+|   <CHARACTER_LITERAL>
+|   <STRING_LITERAL>
+|   BooleanLiteral()
+|   NullLiteral()
+}
+
+void BooleanLiteral() :
+{}
+{
+    "true" | "false"
+}
+
+void NullLiteral() :
+{}
+{
+    "null"
+}
