@@ -5,14 +5,14 @@ options {
     LOOKAHEAD = 2;
 }
 
-PARSER_BEGIN(Java12Parser)
+PARSER_BEGIN(Java1_2JavaCCParser)
 
 package javacc;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Java12Parser {
+public class Java1_2JavaCCParser {
 
     // ---- Invocation tracking ----
     public static class InvocationInfo {
@@ -49,7 +49,7 @@ public class Java12Parser {
     }
 }
 
-PARSER_END(Java12Parser)
+PARSER_END(Java1_2JavaCCParser)
 
 /* ============================================================
    Whitespace and Comments

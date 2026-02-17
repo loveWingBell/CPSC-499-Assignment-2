@@ -15,8 +15,8 @@ public class JavaccInvocationFinder {
         }
 
         int totalInvocations = 0;
-        java.util.List<Java12ParserAnalysis.InvocationInfo> allInvocations =
-            new java.util.ArrayList<Java12ParserAnalysis.InvocationInfo>();
+        java.util.List<Java1_2JavaCCParserAnalysis.InvocationInfo> allInvocations =
+            new java.util.ArrayList<Java1_2JavaCCParserAnalysis.InvocationInfo>();
 
         for (String filePath : args) {
             File file = new File(filePath);
@@ -24,7 +24,7 @@ public class JavaccInvocationFinder {
 
             try {
                 FileInputStream fis = new FileInputStream(file);
-                Java12ParserAnalysis parser = new Java12ParserAnalysis(fis);
+                Java1_2JavaCCParserAnalysis parser = new Java1_2JavaCCParserAnalysis(fis);
                 parser.setFileName(fileName);
                 parser.CompilationUnit();
 
@@ -37,7 +37,7 @@ public class JavaccInvocationFinder {
         System.out.println(allInvocations.size()
             + " method/constructor invocation(s) found in the input file(s)");
         System.out.println();
-        for (Java12ParserAnalysis.InvocationInfo inv : allInvocations) {
+        for (Java1_2JavaCCParserAnalysis.InvocationInfo inv : allInvocations) {
             System.out.println(inv);
         }
     }
