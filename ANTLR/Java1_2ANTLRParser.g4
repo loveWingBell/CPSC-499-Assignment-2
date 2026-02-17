@@ -2,17 +2,13 @@
 - Elda Britu - 30158734
 - Collin Mtendamema - 30139450
 - MD Saif Al-Deen - 30197566
-- Rylan Laplante - 
+- Rylan Laplante - 30070936
 */
 
 parser grammar Java1_2ANTLRParser;
 
 options {
     tokenVocab = Java1_2ANTLRLexer;
-}
-
-@header {
-    package ca.ucalgary.cpsc499_02.w26;
 }
 
 /* CompilationUnit:
@@ -77,7 +73,7 @@ interfaceDeclaration
 */
 type
     : Identifier (PERIOD Identifier)* bracketsOpt
-    | basicType
+    | basicType bracketsOpt
     ;
 
 typeList
@@ -105,7 +101,7 @@ classBodyDeclaration
 
 memberDecl
     : methodOrFieldDecl
-    | VOID Identifier methodDeclaratorRest
+    | VOID Identifier voidMethodDeclaratorRest
     | Identifier constructorDeclaratorRest
     | classOrInterfaceDeclaration
     ;
@@ -115,11 +111,16 @@ methodOrFieldDecl
     ;
 
 methodOrFieldRest
-    : variableDeclaratorRest
+    : fieldDeclaratorsRest SEMICOLON
     | methodDeclaratorRest
     ;
 
-// Interface Bbdy
+// Handles the rest of the first declarator plus any additional comma-separated ones.
+fieldDeclaratorsRest
+    : variableDeclaratorRest (COMMA variableDeclarator)*
+    ;
+
+// Interface Body
 interfaceBody
     : OPEN_BRACE interfaceBodyDeclaration* CLOSE_BRACE
     ;
@@ -227,7 +228,7 @@ block
 blockStatement
     : localVariableDeclarationStatement
     | classOrInterfaceDeclaration
-    | (Identifier COLON)? statement
+    | statement
     ;
 
 localVariableDeclarationStatement
@@ -293,7 +294,7 @@ constantExpression
 
 // Main expression rule - handles assignment
 expression
-    : expression1 (assignmentOperator expression1)?
+    : expression1 (assignmentOperator expression)?
     ;
 
 assignmentOperator
@@ -323,7 +324,8 @@ infixOp
 // Prefix, cast, and postfix
 expression3
     : prefixOp expression3
-    | OPEN_PARENTHESIS (expression | type) CLOSE_PARENTHESIS expression3
+    | OPEN_PARENTHESIS basicType bracketsOpt CLOSE_PARENTHESIS expression3  // primitive cast
+    | OPEN_PARENTHESIS expression CLOSE_PARENTHESIS expression3             // reference cast or grouped expr
     | primary selector* postfixOp*
     ;
 
@@ -398,6 +400,7 @@ arguments
 // Creator - (Constructor invocations)
 creator
     : qualifiedIdentifier (arrayCreatorRest | classCreatorRest)
+    | basicType arrayCreatorRest
     ;
 
 innerCreator
@@ -405,7 +408,10 @@ innerCreator
     ;
 
 arrayCreatorRest
-    : OPEN_BRACKET (bracketsOpt arrayInitializer | expression CLOSE_BRACKET (OPEN_BRACKET expression CLOSE_BRACKET)* bracketsOpt)
+    : OPEN_BRACKET
+      ( CLOSE_BRACKET bracketsOpt arrayInitializer
+      | expression CLOSE_BRACKET (OPEN_BRACKET expression CLOSE_BRACKET)* bracketsOpt
+      )
     ;
 
 classCreatorRest

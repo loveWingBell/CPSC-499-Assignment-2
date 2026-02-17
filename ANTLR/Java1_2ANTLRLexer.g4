@@ -1,9 +1,5 @@
 lexer grammar Java1_2ANTLRLexer;
 
-@header {
-	package ca.ucalgary.cpsc499_02.w26;
-}
-
 ABSTRACT						: 'abstract';
 BOOLEAN						: 'boolean';
 BREAK						: 'break';
