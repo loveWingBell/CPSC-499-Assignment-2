@@ -271,9 +271,10 @@ public class AntlrInvocationFinder {
         List<InvocationInfo> allInvocations = new ArrayList<>();
 
         for (String filePath : args) {
-            File file = new File(filePath);
-            String fileName = file.getName();
+        File file = new File(filePath);
+        String fileName = file.getName();
 
+        try {
             CharStream input = CharStreams.fromPath(file.toPath());
             Java1_2ANTLRLexer lexer = new Java1_2ANTLRLexer(input);
             CommonTokenStream tokenStream = new CommonTokenStream(lexer);
@@ -293,7 +294,11 @@ public class AntlrInvocationFinder {
             walker.walk(listener, tree);
 
             allInvocations.addAll(listener.invocations);
+            
+        } catch (Exception e) {
+            System.err.println("Parse errors found in " + fileName);
         }
+    }
 
         // Print results
         System.out.println(allInvocations.size() + " method/constructor invocation(s) found in the input file(s)");
