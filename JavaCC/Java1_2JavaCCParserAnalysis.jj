@@ -113,7 +113,7 @@ TOKEN : {
 | < STRING_LITERAL: "\"" ( ~["\"","\\","\n","\r"] | "\\" ~[] )* "\"" >
 }
 
-/* Keywords (Java 1.2) */
+/* Keywords and keyword-like literals (Java 1.2) */
 TOKEN : {
   < NULL_LITERAL: "null" >
 | < TRUE: "true" >
@@ -287,9 +287,9 @@ void InterfaceBodyDeclaration() :
 void MemberDecl() :
 {}
 {
-  ( MethodDecl()
-  | FieldDecl()
-  | ConstructorDecl()
+  ( LOOKAHEAD(Modifiers() ( Type() | <VOID> ) <IDENTIFIER> <LPAREN>) MethodDecl()
+  | LOOKAHEAD(Modifiers() <IDENTIFIER> <LPAREN>) ConstructorDecl()
+  | LOOKAHEAD(Modifiers() Type()) FieldDecl()
   | ClassDeclaration()
   | InterfaceDeclaration()
   )
@@ -384,7 +384,7 @@ void ConstructorBody() :
 {}
 {
   <LBRACE>
-    [ ExplicitConstructorInvocation() ]
+    [ LOOKAHEAD(<THIS> <LPAREN> | <SUPER> <LPAREN>) ExplicitConstructorInvocation() ]
     ( BlockStatement() )*
   <RBRACE>
 }
@@ -470,9 +470,10 @@ void Block() :
 void BlockStatement() :
 {}
 {
-  ( LocalVariableDeclarationStatement()
-  | ClassDeclaration()
-  | InterfaceDeclaration()
+
+  ( LOOKAHEAD(Modifiers() Type() <IDENTIFIER>) LocalVariableDeclarationStatement()
+  | LOOKAHEAD(2) ClassDeclaration()
+  | LOOKAHEAD(2) InterfaceDeclaration()
   | Statement()
   )
 }
@@ -727,7 +728,8 @@ void UnaryExpressionNotPlusMinus() :
 {
   ( <TILDE> UnaryExpression()
   | <BANG> UnaryExpression()
-  | CastExpression()
+  | LOOKAHEAD( <LPAREN> ( PrimitiveType() | Name() ) ( <LBRACKET> <RBRACKET> )* <RPAREN> )
+    CastExpression()
   | PostfixExpression()
   )
 }
@@ -735,15 +737,13 @@ void UnaryExpressionNotPlusMinus() :
 void CastExpression() :
 {}
 {
-  // Simplified disambiguation: if it looks like (Type) Expr
-  LOOKAHEAD( <LPAREN> ( PrimitiveType() | Name() ) ( <LBRACKET> <RBRACKET> )* <RPAREN> )
   <LPAREN> Type() <RPAREN> UnaryExpression()
 }
 
 void PostfixExpression() :
 {}
 {
-  Primary() ( PostfixSuffix() )* [ <INC> | <DEC> ]
+  Primary() ( LOOKAHEAD(<DOT> | <LBRACKET> | <LPAREN>) PostfixSuffix() )* [ <INC> | <DEC> ]
 }
 
 void PostfixSuffix() :
