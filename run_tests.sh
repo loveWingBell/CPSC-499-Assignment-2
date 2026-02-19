@@ -9,9 +9,9 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ANTLR_DIR="$SCRIPT_DIR/antlr"
-JAVACC_DIR="$SCRIPT_DIR/javacc"
-TESTS_DIR="$SCRIPT_DIR/tests"
+ANTLR_DIR="$SCRIPT_DIR/ANTLR"
+JAVACC_DIR="$SCRIPT_DIR/JavaCC"
+TESTS_DIR="$SCRIPT_DIR/TESTS"
 
 # Colors for output
 RED='\033[0;31m'
@@ -62,7 +62,7 @@ echo -e "${BLUE}[STEP 1]${NC} Building ANTLR parser..."
 if [ -n "$ANTLR_JAR" ] && [ -f "$ANTLR_JAR" ]; then
     cd "$ANTLR_DIR"
     echo "  Generating parser from grammars..."
-    java -jar "$ANTLR_JAR" -visitor Java12Lexer.g4 Java12Parser.g4 2>&1 | head -20
+    java -jar "$ANTLR_JAR" Java1_2ANTLRLexer.g4 Java1_2ANTLRParser.g4 2>&1 | head -20
 
     echo "  Compiling generated code + analysis tool..."
     javac -cp "$ANTLR_JAR:." *.java 2>&1 | head -20
@@ -85,10 +85,7 @@ mkdir -p generated/javacc
 
 if command -v javacc &>/dev/null; then
     echo "  Generating parser from grammar..."
-    # Generate the basic parser
-    javacc -OUTPUT_DIRECTORY=generated/javacc Java12Parser.jj 2>&1 | tail -5
-    # Generate the analysis parser
-    javacc -OUTPUT_DIRECTORY=generated/javacc Java12ParserAnalysis.jj 2>&1 | tail -5
+    javacc -OUTPUT_DIRECTORY=generated/javacc Java1_2JavaCCParserAnalysis.jj 2>&1 | tail -5
 
     echo "  Compiling generated code + analysis tool..."
     cp JavaccInvocationFinder.java generated/javacc/
@@ -100,8 +97,7 @@ if command -v javacc &>/dev/null; then
     cd "$JAVACC_DIR"
 elif [ -n "$JAVACC_JAR" ] && [ -f "$JAVACC_JAR" ]; then
     echo "  Generating parser from grammar..."
-    java -cp "$JAVACC_JAR" javacc -OUTPUT_DIRECTORY=generated/javacc Java12Parser.jj 2>&1 | tail -5
-    java -cp "$JAVACC_JAR" javacc -OUTPUT_DIRECTORY=generated/javacc Java12ParserAnalysis.jj 2>&1 | tail -5
+    java -cp "$JAVACC_JAR" javacc -OUTPUT_DIRECTORY=generated/javacc Java1_2JavaCCParserAnalysis.jj 2>&1 | tail -5
 
     echo "  Compiling generated code + analysis tool..."
     cp JavaccInvocationFinder.java generated/javacc/
@@ -124,7 +120,7 @@ echo "============================================================"
 echo "  Running Tests"
 echo "============================================================"
 
-VALID_FILES=("Test1_Valid.java" "Test2_Valid.java" "Test3_Minimal.java" "Test4_Empty.java")
+VALID_FILES=("Test1_Valid.java" "Test2_Valid.java" "Test3_Minimal.java" "Test4_Empty.java" "Test9_Valid_EdgeCases.java")
 INVALID_FILES=("Test5_Invalid_MissingSemicolon.java" "Test6_Invalid_BadSyntax.java" "Test7_Invalid_Java5Features.java" "Test8_Invalid_NotJava.txt")
 
 pass_count=0
@@ -143,7 +139,7 @@ run_antlr_parse_test() {
     fi
 
     cd "$ANTLR_DIR"
-    output=$(java -cp "$ANTLR_JAR:." org.antlr.v4.gui.TestRig Java12 compilationUnit "$filepath" 2>&1)
+    output=$(java -cp "$ANTLR_JAR:." org.antlr.v4.gui.TestRig Java1_2ANTLRParser compilationUnit "$filepath" 2>&1)
     exit_code=$?
 
     # Check for errors in output
@@ -184,7 +180,7 @@ run_javacc_parse_test() {
     fi
 
     cd "$JAVACC_DIR/generated"
-    output=$(java javacc.Java12Parser < "$filepath" 2>&1)
+    output=$(java javacc.Java1_2JavaCCParserAnalysis < "$filepath" 2>&1)
     exit_code=$?
 
     has_errors=false

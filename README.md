@@ -6,10 +6,10 @@
 CPSC-499-Assignment-2/
 ├── ANTLR/
 │   ├── Java1_2ANTLRLexer.g4                 # ANTLR lexer grammar
-│   ├── Java1_2ANTLERParser.g4               # ANTLR parser grammar
+│   ├── Java1_2ANTLRParser.g4                # ANTLR parser grammar
 │   └── AntlrInvocationFinder.java           # ANTLR-based invocation analysis tool
 ├── JavaCC/
-│   ├── Java1_2JavaCCAnalysis.jj             # JavaCC grammar with invocation tracking
+│   ├── Java1_2JavaCCParserAnalysis.jj       # JavaCC grammar with invocation tracking
 │   └── JavaccInvocationFinder.java          # JavaCC-based invocation analysis driver
 ├── TESTS/
 │   ├── Test1_Valid.java                     # Valid: constructors, method calls, chaining
@@ -57,10 +57,10 @@ make test
 
 ```bash
 # ANTLR
-cd antlr
-java -cp "path/to/antlr.jar:." AntlrInvocationFinder ../tests/Test1_Valid.java
+cd ANTLR
+java -cp "path/to/antlr.jar:." AntlrInvocationFinder ../TESTS/Test1_Valid.java
 
 # JavaCC
-cd javacc/generated
-java javacc.JavaccInvocationFinder ../../tests/Test1_Valid.java
+cd JavaCC/generated
+java javacc.JavaccInvocationFinder ../../TESTS/Test1_Valid.java
 ```

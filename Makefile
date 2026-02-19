@@ -18,9 +18,9 @@
 ANTLR_JAR ?= lib/antlr-4.13.2-complete.jar
 JAVACC_CMD ?= javacc
 
-ANTLR_DIR = antlr
-JAVACC_DIR = javacc
-TESTS_DIR = tests
+ANTLR_DIR = ANTLR
+JAVACC_DIR = JavaCC
+TESTS_DIR = TESTS
 
 .PHONY: all antlr javacc test clean
 
@@ -30,7 +30,7 @@ all: antlr javacc
 antlr: $(ANTLR_JAR)
 	@echo "=== Building ANTLR parser ==="
 	cd $(ANTLR_DIR) && \
-	java -jar ../$(ANTLR_JAR) -visitor Java12Lexer.g4 Java12Parser.g4 && \
+	java -jar ../$(ANTLR_JAR) Java1_2ANTLRLexer.g4 Java1_2ANTLRParser.g4 && \
 	javac -cp ../$(ANTLR_JAR):. *.java
 	@echo "=== ANTLR build complete ==="
 
@@ -39,8 +39,7 @@ javacc:
 	@echo "=== Building JavaCC parser ==="
 	mkdir -p $(JAVACC_DIR)/generated/javacc
 	cd $(JAVACC_DIR) && \
-	$(JAVACC_CMD) -OUTPUT_DIRECTORY=generated/javacc Java12Parser.jj && \
-	$(JAVACC_CMD) -OUTPUT_DIRECTORY=generated/javacc Java12ParserAnalysis.jj && \
+	$(JAVACC_CMD) -OUTPUT_DIRECTORY=generated/javacc Java1_2JavaCCParserAnalysis.jj && \
 	cp JavaccInvocationFinder.java generated/javacc/ && \
 	cd generated && javac javacc/*.java
 	@echo "=== JavaCC build complete ==="
@@ -53,8 +52,7 @@ test: all
 # --- Clean ---
 clean:
 	@echo "=== Cleaning generated files ==="
-	cd $(ANTLR_DIR) && rm -f *.class *.tokens *.interp Java12Lexer.java Java12Parser.java \
-		Java12ParserBaseListener.java Java12ParserListener.java \
-		Java12ParserBaseVisitor.java Java12ParserVisitor.java
+	cd $(ANTLR_DIR) && rm -f *.class *.tokens *.interp Java1_2ANTLRLexer.java Java1_2ANTLRParser.java \
+		Java1_2ANTLRParserBaseListener.java Java1_2ANTLRParserListener.java
 	rm -rf $(JAVACC_DIR)/generated
 	@echo "=== Clean complete ==="
