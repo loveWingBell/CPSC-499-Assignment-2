@@ -94,8 +94,7 @@ SKIP : { < LINE_COMMENT: "//" (~["\n","\r"])* ("\n"|"\r"|"\r\n") > }
 SKIP : { < BLOCK_COMMENT: "/*" ( ~["*"] | "*" ~["/"] )* "*/" > }
 
 TOKEN : {
-  < IDENTIFIER: <LETTER> ( <LETTER> | <DIGIT> )* >
-| < #LETTER: ["A"-"Z","a"-"z","_","$"] >
+  < #LETTER: ["A"-"Z","a"-"z","_","$"] >
 | < #DIGIT: ["0"-"9"] >
 }
 
@@ -105,21 +104,21 @@ TOKEN : {
       ( ["l","L"] )?
   >
 | < FLOATING_LITERAL:
-      ( (["0"-"9"])+ "." (["0"-"9"])* (["e","E"] ["+","-"]? (["0"-"9"])+ )? (["f","F","d","D"])? )
-    | ( "." (["0"-"9"])+ (["e","E"] ["+","-"]? (["0"-"9"])+ )? (["f","F","d","D"])? )
-    | ( (["0"-"9"])+ (["e","E"] ["+","-"]? (["0"-"9"])+ ) (["f","F","d","D"])? )
+      ( (["0"-"9"])+ "." (["0"-"9"])* (["e","E"] ( ["+","-"] )? (["0"-"9"])+ )? (["f","F","d","D"])? )
+    | ( "." (["0"-"9"])+ (["e","E"] ( ["+","-"] )? (["0"-"9"])+ )? (["f","F","d","D"])? )
+    | ( (["0"-"9"])+ (["e","E"] ( ["+","-"] )? (["0"-"9"])+ ) (["f","F","d","D"])? )
     | ( (["0"-"9"])+ (["f","F","d","D"]) )
   >
-| < CHARACTER_LITERAL: "'" ( ~["'","\\","\n","\r"] | "\\" . ) "'" >
-| < STRING_LITERAL: "\"" ( ~["\"","\\","\n","\r"] | "\\" . )* "\"" >
-| < NULL_LITERAL: "null" >
-| < TRUE: "true" >
-| < FALSE: "false" >
+| < CHARACTER_LITERAL: "'" ( ~["'","\\","\n","\r"] | "\\" ~[] ) "'" >
+| < STRING_LITERAL: "\"" ( ~["\"","\\","\n","\r"] | "\\" ~[] )* "\"" >
 }
 
 /* Keywords (Java 1.2) */
 TOKEN : {
-  < ABSTRACT: "abstract" >
+  < NULL_LITERAL: "null" >
+| < TRUE: "true" >
+| < FALSE: "false" >
+| < ABSTRACT: "abstract" >
 | < BOOLEAN: "boolean" >
 | < BREAK: "break" >
 | < BYTE: "byte" >
@@ -129,7 +128,7 @@ TOKEN : {
 | < CLASS: "class" >
 | < CONST: "const" >
 | < CONTINUE: "continue" >
-| < DEFAULT: "default" >
+| < DEFAULT_KW: "default" >
 | < DO: "do" >
 | < DOUBLE: "double" >
 | < ELSE: "else" >
@@ -168,6 +167,11 @@ TOKEN : {
 | < VOLATILE: "volatile" >
 | < WHILE: "while" >
 }
+
+TOKEN : {
+  < IDENTIFIER: <LETTER> ( <LETTER> | <DIGIT> )* >
+}
+
 
 /* Operators and separators */
 TOKEN : {
@@ -561,7 +565,7 @@ void SwitchBlockStatementGroup() :
 void SwitchLabel() :
 {}
 {
-  ( <CASE> Expression() <COLON> | <DEFAULT> <COLON> )
+  ( <CASE> Expression() <COLON> | <DEFAULT_KW> <COLON> )
 }
 
 void TryStatement() :
@@ -849,10 +853,4 @@ void ArrayDimsAndInits() :
 {
   ( <LBRACKET> Expression() <RBRACKET> )+ ( <LBRACKET> <RBRACKET> )* [ ArrayInitializer() ]
 | ( <LBRACKET> <RBRACKET> )+ ArrayInitializer()
-}
-
-void ClassBody() :
-{}
-{
-  <LBRACE> ( ClassBodyDeclaration() )* <RBRACE>
 }
