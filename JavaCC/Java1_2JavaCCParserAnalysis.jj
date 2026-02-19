@@ -273,7 +273,7 @@ void ClassBodyDeclaration() :
 {}
 {
   ( <SEMI>
-  | [ <STATIC> ] Block()
+  | LOOKAHEAD(<STATIC> <LBRACE> | <LBRACE>) [ <STATIC> ] Block()
   | MemberDecl()
   )
 }
@@ -420,7 +420,7 @@ void ExplicitConstructorInvocation() :
 void Type() :
 {}
 {
-  ( PrimitiveType() | ReferenceType() )
+  ( PrimitiveType() ( <LBRACKET> <RBRACKET> )* | ReferenceType() )
 }
 
 void PrimitiveType() :
@@ -478,16 +478,23 @@ void BlockStatement() :
   )
 }
 
+void LocalVariableDeclaration() :
+{}
+{
+  Modifiers() Type() VariableDeclarators()
+}
+
 void LocalVariableDeclarationStatement() :
 {}
 {
-  Modifiers() Type() VariableDeclarators() <SEMI>
+  LocalVariableDeclaration() <SEMI>
 }
 
 void Statement() :
 {}
 {
   ( Block()
+  | LOOKAHEAD(<IDENTIFIER> <COLON>) <IDENTIFIER> <COLON> Statement()
   | IfStatement()
   | WhileStatement()
   | DoStatement()
@@ -536,7 +543,9 @@ void ForStatement() :
 void ForInit() :
 {}
 {
-  ( LocalVariableDeclarationStatement() | StatementExpressionList() )
+  ( LOOKAHEAD(Modifiers() Type() <IDENTIFIER>) LocalVariableDeclaration()
+  | StatementExpressionList()
+  )
 }
 
 void ForUpdate() :
@@ -796,7 +805,10 @@ void PostfixSuffix() :
 void Primary() :
 {}
 {
-  ( PrimaryNoNewArray() | ClassInstanceCreationExpression() | ArrayCreationExpression() )
+  ( PrimaryNoNewArray()
+  | LOOKAHEAD(<NEW> ( PrimitiveType() | Name() ) <LBRACKET>) ArrayCreationExpression()
+  | ClassInstanceCreationExpression()
+  )
 }
 
 void PrimaryNoNewArray() :
