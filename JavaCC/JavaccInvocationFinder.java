@@ -28,12 +28,22 @@ public final class JavaCCInvocationFinder {
             System.exit(2);
         }
 
-        final List<Java1_2JavaCCParserAnalysis.InvocationInfo> all = new ArrayList<>();
+        final List all = new ArrayList();
 
-        for (String fileName : args) {
-            if (fileName == null || fileName.isBlank()) continue;
+        for (int i = 0; i < args.length; i++) {
+            String fileName = args[i];
+            if (fileName == null || fileName.trim().length() == 0) continue;
 
-            try (InputStream in = new FileInputStream(fileName)) {
+            // Reject files that don't have a .java extension
+            if (!fileName.endsWith(".java")) {
+                System.err.println("[JavaCC] Skipping non-Java file: " + fileName
+                        + " (only .java files are supported)");
+                continue;
+            }
+
+            InputStream in = null;
+            try {
+                in = new FileInputStream(fileName);
                 Java1_2JavaCCParserAnalysis parser = new Java1_2JavaCCParserAnalysis(in);
                 parser.setFileName(fileName);
                 parser.CompilationUnit();
@@ -43,14 +53,18 @@ public final class JavaCCInvocationFinder {
                 // (The harness can separately validate non-zero exit codes if desired.)
                 System.err.println("[JavaCC] Failed to parse " + fileName + ": " + t.getClass().getSimpleName()
                         + (t.getMessage() != null ? (": " + t.getMessage()) : ""));
+            } finally {
+                if (in != null) {
+                    try { in.close(); } catch (Exception e) { /* ignore */ }
+                }
             }
         }
 
         System.out.println(all.size() + " method/constructor invocation(s) found in the input file(s)");
         System.out.println();
 
-        for (Java1_2JavaCCParserAnalysis.InvocationInfo info : all) {
-            System.out.println(info.toString());
+        for (int i = 0; i < all.size(); i++) {
+            System.out.println(all.get(i).toString());
         }
     }
 }

@@ -298,7 +298,11 @@ void MemberDecl() :
 void InterfaceMemberDecl() :
 {}
 {
-  ( MethodDecl() | FieldDecl() | ClassDeclaration() | InterfaceDeclaration() )
+  ( LOOKAHEAD(Modifiers() ( Type() | <VOID> ) <IDENTIFIER> <LPAREN>) MethodDecl()
+  | LOOKAHEAD(Modifiers() Type()) FieldDecl()
+  | ClassDeclaration()
+  | InterfaceDeclaration()
+  )
 }
 
 void FieldDecl() :
