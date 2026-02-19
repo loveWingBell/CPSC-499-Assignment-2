@@ -3,16 +3,15 @@
 ## Project Structure
 
 ```
-assignment2/
-├── antlr/
+CPSC-499-Assignment-2/
+├── ANTLR/
 │   ├── Java1_2ANTLRLexer.g4                 # ANTLR lexer grammar
 │   ├── Java1_2ANTLERParser.g4               # ANTLR parser grammar
 │   └── AntlrInvocationFinder.java           # ANTLR-based invocation analysis tool
-├── javacc/
-│   ├── Java1_2JavaCCParser.jj               # JavaCC grammar (plain parser)
+├── JavaCC/
 │   ├── Java1_2JavaCCAnalysis.jj             # JavaCC grammar with invocation tracking
 │   └── JavaccInvocationFinder.java          # JavaCC-based invocation analysis driver
-├── tests/
+├── TESTS/
 │   ├── Test1_Valid.java                     # Valid: constructors, method calls, chaining
 │   ├── Test2_Valid.java                     # Valid: interfaces, inheritance, inner classes
 │   ├── Test3_Minimal.java                   # Valid: minimal Hello World
